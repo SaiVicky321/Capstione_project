@@ -25,27 +25,32 @@ pipeline {
         }
         stage('Building the Docker Image') {
             steps {
-                sh """docker build -t saivicky321/prod:V${env.BUILD_NUMBER} ."""
+                sh """docker build -t ${env.DOCKERHUB_CREDENDIALS_USR}/prod:V${env.BUILD_NUMBER} ."""
                 sh 'docker images'
             }
         }
         stage('Prepare Docker Container') {
             steps {
                 script {
-                    def containerIds = sh(script: "docker ps -q -f 'name=$DOCKERHUB_CREDENDIALS_USR'", returnStdout: true).trim()
+                    echo "Environment Variable DOCKERHUB_CREDENDIALS_USR: ${env.DOCKERHUB_CREDENDIALS_USR}"
+                    def containerIds = sh(script: "docker ps -q -f 'name=${env.DOCKERHUB_CREDENDIALS_USR}'", returnStdout: true).trim()
                     echo "Found container IDs: ${containerIds}"
                     if (containerIds) {
                         sh """
-                        docker stop ${containerIds} || true
-                        docker rm ${containerIds} || true
-                        """
+                echo "Stopping containers: ${containerIds}"
+                docker stop ${containerIds} || true
+                echo "Removing containers: ${containerIds}"
+                docker rm ${containerIds} || true
+                """
+                    } else {
+                        echo "No containers found with the prefix ${env.DOCKERHUB_CREDENDIALS_USR}"
                     }
                 }
             }
         }
         stage('Running the Container') {
             steps {
-                sh """docker run --name my-react-app -d -p 80:80 saivicky321/prod:V${env.BUILD_NUMBER}"""
+                sh """docker run --name my-react-app -d -p 80:80 ${env.DOCKERHUB_CREDENDIALS_USR}/prod:V${env.BUILD_NUMBER}"""
                 sh 'docker ps -a'
             }
         }
@@ -56,7 +61,7 @@ pipeline {
         }
         stage('Image Push') {
             steps {
-                sh """docker push saivicky321/prod:V${env.BUILD_NUMBER}"""
+                sh """docker push ${env.DOCKERHUB_CREDENDIALS_USR}/prod:V${env.BUILD_NUMBER}"""
             }
         }
     }
@@ -66,5 +71,3 @@ pipeline {
         }
     }
 }
-
-
