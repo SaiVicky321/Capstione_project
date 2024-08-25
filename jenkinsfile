@@ -1,0 +1,72 @@
+pipeline {
+    agent any
+    environment {
+        DOCKERHUB_CREDENTIALS = credentials('Dockerhub-sai')
+    }
+    parameters {
+        string(name: 'CONTAINER_PREFIX', defaultValue: 'saivicky321', description: 'Prefix of the Docker container names')
+    }
+    stages {
+        stage('GIT Checkout') {
+            steps {
+                checkout scmGit(branches: [
+                    [name: '*/prod']
+                ], extensions: [], userRemoteConfigs: [
+                    [url: 'https://github.com/SaiVicky321/Capstione_project.git']
+                ])
+            }
+        }
+        stage('Listing the Directory') {
+            steps {
+                sh 'ls -lrt'
+            }
+        }
+        stage('Listing the Docker Images') {
+            steps {
+                sh 'docker images'
+            }
+        }
+        stage('Building the Docker Image') {
+            steps {
+                sh """docker build -t saivicky321/prod:V${env.BUILD_NUMBER} ."""
+                sh 'docker images'
+            }
+        }
+        stage('Prepare Docker Container') {
+            steps {
+                script {
+                    def containerIds = sh(script: "docker ps -q -f 'name=${params.CONTAINER_PREFIX}'", returnStdout: true).trim()
+                    echo "Found container IDs: ${containerIds}"
+                    if (containerIds) {
+                        sh """
+                        docker stop ${containerIds} || true
+                        docker rm ${containerIds} || true
+                        """
+                    }
+                }
+            }
+        }
+        stage('Running the Container') {
+            steps {
+                sh """docker run --name my-react-app -d -p 80:80 saivicky321/prod:V${env.BUILD_NUMBER}"""
+                sh 'docker ps -a'
+            }
+        }
+        stage('docker login ') {
+            steps {
+                sh """echo $DOCKERHUB_CREDENDIALS_PSW | docker login -u $DOCKERHUB_CREDENDIALS_USR --password-stdin"""
+            }
+        }
+        stage('Image Push') {
+            steps {
+                sh """docker push saivicky321/prod:V${env.BUILD_NUMBER}"""
+            }
+        }
+    }
+    post {
+        always {
+            sh 'docker logout'
+        }
+    }
+}
+
