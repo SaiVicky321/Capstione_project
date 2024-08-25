@@ -6,11 +6,7 @@ pipeline {
     stages {
         stage('GIT Checkout') {
             steps {
-                checkout scmGit(branches: [
-                    [name: '*/prod']
-                ], extensions: [], userRemoteConfigs: [
-                    [url: 'https://github.com/SaiVicky321/Capstione_project.git']
-                ])
+                checkout scmGit(branches: [[name: '*/prod']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/SaiVicky321/Capstione_project.git']])
             }
         }
         stage('listing the directory') {
