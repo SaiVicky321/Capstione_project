@@ -1,8 +1,7 @@
 pipeline {
     agent any
     environment {
-        // Define the credentials ID here but don't directly use them in commands
-        DOCKERHUB_CREDENTIALS_ID = 'Dockerhub-sai'
+        DOCKERHUB_CREDENDIALS = credentials('Dockerhub-sai')
     }
     stages {
         stage('GIT Checkout') {
@@ -14,81 +13,42 @@ pipeline {
                 ])
             }
         }
-        stage('Listing the Directory') {
+        stage('listing the directory') {
             steps {
                 sh 'ls -lrt'
             }
         }
-        stage('Listing the Docker Images') {
+        stage('listing the docker images') {
             steps {
                 sh 'docker images'
             }
         }
-        stage('Building the Docker Image') {
+        stage('Building the docker image') {
             steps {
-                script {
-                    withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
-                        // Securely manage DockerHub credentials
-                        def containerIds = sh(script: "docker ps -q -f 'name=${env.DOCKERHUB_USR}'", returnStdout: true).trim()
-                        echo "Found container IDs: ${containerIds}"
-                        if (containerIds) {
-                            sh """
-                            docker stop ${containerIds} || true
-                            docker rm ${containerIds} || true
-                            """
-                        } else {
-                            echo "No containers found with the prefix"
-                        }
-                    }
-                }
-            }
-            stage('Prepare Docker Container') {
-                steps {
-                    script {
-                        withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
-                            // Securely manage DockerHub credentials
-                            def containerIds = sh(script: "docker ps -q -f 'name=${env.DOCKERHUB_CREDENTIALS_USR}'", returnStdout: true).trim()
-                            echo "Found container IDs: ${containerIds}"
-                            if (containerIds) {
-                                sh """
-                            docker stop ${containerIds} || true
-                            docker rm ${containerIds} || true
-                            """
-                            } else {
-                                echo "No containers found with the prefix ${env.DOCKERHUB_CREDENTIALS_USR}"
-                            }
-                        }
-                    }
-                }
-            }
-            stage('Running the Container') {
-                steps {
-                    script {
-                        def dockerImageName = "${env.DOCKERHUB_CREDENTIALS_USR}/prod:V${env.BUILD_NUMBER}"
-                        sh "docker run --name my-react-app -d -p 80:80 ${dockerImageName}"
-                        sh 'docker ps -a'
-                    }
-                }
-            }
-            stage('Docker Login') {
-                steps {
-                    withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
-                        sh 'echo $DOCKERHUB_PSW | docker login -u $DOCKERHUB_USR --password-stdin'
-                    }
-                }
-            }
-            stage('Image Push') {
-                steps {
-                    script {
-                        def dockerImageName = "${env.DOCKERHUB_CREDENTIALS_USR}/prod:V${env.BUILD_NUMBER}"
-                        sh "docker push ${dockerImageName}"
-                    }
-                }
+                sh """docker build -t saivicky321/prod:V${env.BUILD_NUMBER} ."""
+                sh 'docker images'
             }
         }
-        post {
-            always {
-                sh 'docker logout'
+        stage('Runnung the container') {
+            steps {
+                sh """docker run --name my-react-app -d -p 80:80 saivicky321/dev:V${env.BUILD_NUMBER}"""
+                sh 'docker ps -a'
+            }
+        }
+        stage('docker login ') {
+            steps {
+                sh """echo $DOCKERHUB_CREDENDIALS_PSW | docker login -u $DOCKERHUB_CREDENDIALS_USR --password-stdin"""
+            }
+        }
+        stage('Image push') {
+            steps {
+                sh """docker push saivicky321/prod:V${env.BUILD_NUMBER}"""
             }
         }
     }
+    post {
+        always {
+            sh 'docker logout'
+        }
+    }
+}
