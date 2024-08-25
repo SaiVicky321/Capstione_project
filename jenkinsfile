@@ -29,12 +29,6 @@ pipeline {
                 sh 'docker images'
             }
         }
-        stage('Runnung the container') {
-            steps {
-                sh """docker run --name my-react-app -d -p 80:80 saivicky321/dev:V${env.BUILD_NUMBER}"""
-                sh 'docker ps -a'
-            }
-        }
         stage('docker login ') {
             steps {
                 sh """echo $DOCKERHUB_CREDENDIALS_PSW | docker login -u $DOCKERHUB_CREDENDIALS_USR --password-stdin"""
