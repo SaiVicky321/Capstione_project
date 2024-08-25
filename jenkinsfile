@@ -1,17 +1,12 @@
 pipeline {
     agent any
     environment {
-        // Define the credentials ID here but don't directly use them in commands
-        DOCKERHUB_CREDENTIALS_ID = 'Dockerhub-sai'
+        DOCKERHUB_CREDENTIALS_ID = 'Dockerhub-sai' // Ensure this ID matches your Jenkins credentials ID
     }
     stages {
         stage('GIT Checkout') {
             steps {
-                checkout scmGit(branches: [
-                    [name: '*/prod']
-                ], extensions: [], userRemoteConfigs: [
-                    [url: 'https://github.com/SaiVicky321/Capstione_project.git']
-                ])
+                checkout scmGit(branches: [[name: '*/prod']], extensions: [], userRemoteConfigs: [[url: 'https://github.com/SaiVicky321/Capstione_project.git']])
             }
         }
         stage('Listing the Directory') {
@@ -26,19 +21,17 @@ pipeline {
         }
         stage('Building the Docker Image') {
             steps {
-                script {
-                    def dockerImageName = "${env.DOCKERHUB_CREDENTIALS_USR}/prod:V${env.BUILD_NUMBER}"
-                    sh "docker build -t ${dockerImageName} ."
-                    sh 'docker images'
+                withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
+                    sh """docker build -t ${DOCKERHUB_USR}/prod:V${env.BUILD_NUMBER} ."""
                 }
+                sh 'docker images'
             }
         }
         stage('Prepare Docker Container') {
             steps {
                 script {
                     withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
-                        // Securely manage DockerHub credentials
-                        def containerIds = sh(script: "docker ps -q -f 'name=${env.DOCKERHUB_CREDENTIALS_USR}'", returnStdout: true).trim()
+                        def containerIds = sh(script: "docker ps -q -f 'name=${DOCKERHUB_USR}'", returnStdout: true).trim()
                         echo "Found container IDs: ${containerIds}"
                         if (containerIds) {
                             sh """
@@ -46,7 +39,7 @@ pipeline {
                             docker rm ${containerIds} || true
                             """
                         } else {
-                            echo "No containers found with the prefix ${env.DOCKERHUB_CREDENTIALS_USR}"
+                            echo "No containers found with the prefix ${DOCKERHUB_USR}"
                         }
                     }
                 }
@@ -54,11 +47,10 @@ pipeline {
         }
         stage('Running the Container') {
             steps {
-                script {
-                    def dockerImageName = "${env.DOCKERHUB_CREDENTIALS_USR}/prod:V${env.BUILD_NUMBER}"
-                    sh "docker run --name my-react-app -d -p 80:80 ${dockerImageName}"
-                    sh 'docker ps -a'
+                withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
+                    sh """docker run --name my-react-app -d -p 80:80 ${DOCKERHUB_USR}/prod:V${env.BUILD_NUMBER}"""
                 }
+                sh 'docker ps -a'
             }
         }
         stage('Docker Login') {
@@ -70,9 +62,8 @@ pipeline {
         }
         stage('Image Push') {
             steps {
-                script {
-                    def dockerImageName = "${env.DOCKERHUB_CREDENTIALS_USR}/prod:V${env.BUILD_NUMBER}"
-                    sh "docker push ${dockerImageName}"
+                withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
+                    sh """docker push ${DOCKERHUB_USR}/prod:V${env.BUILD_NUMBER}"""
                 }
             }
         }
