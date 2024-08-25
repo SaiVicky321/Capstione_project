@@ -32,18 +32,18 @@ pipeline {
         stage('Prepare Docker Container') {
             steps {
                 script {
-                    echo "Environment Variable DOCKERHUB_CREDENTIALS_USR: ${env.DOCKERHUB_CREDENTIALS_USR}"
-                    def containerIds = sh(script: "docker ps -q -f 'name=${env.DOCKERHUB_CREDENTIALS_USR}'", returnStdout: true).trim()
-                    echo "Found container IDs: ${containerIds}"
-                    if (containerIds) {
-                        sh """
-                echo "Stopping containers: ${containerIds}"
-                docker stop ${containerIds} || true
-                echo "Removing containers: ${containerIds}"
-                docker rm ${containerIds} || true
-                """
-                    } else {
-                        echo "No containers found with the prefix ${env.DOCKERHUB_CREDENTIALS_USR}"
+                    withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
+                        // Avoid passing secrets directly
+                        def containerIds = sh(script: "docker ps -q -f 'name=${env.DOCKERHUB_CREDENTIALS_USR}'", returnStdout: true).trim()
+                        echo "Found container IDs: ${containerIds}"
+                        if (containerIds) {
+                            sh """
+                            docker stop ${containerIds} || true
+                            docker rm ${containerIds} || true
+                            """
+                        } else {
+                            echo "No containers found with the prefix ${env.DOCKERHUB_CREDENTIALS_USR}"
+                        }
                     }
                 }
             }
@@ -54,9 +54,11 @@ pipeline {
                 sh 'docker ps -a'
             }
         }
-        stage('docker login ') {
+        stage('Docker Login') {
             steps {
-                sh """echo $DOCKERHUB_CREDENTIALS_USR | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"""
+                withCredentials([usernamePassword(credentialsId: env.DOCKERHUB_CREDENTIALS_ID, usernameVariable: 'DOCKERHUB_USR', passwordVariable: 'DOCKERHUB_PSW')]) {
+                    sh 'echo $DOCKERHUB_PSW | docker login -u $DOCKERHUB_USR --password-stdin'
+                }
             }
         }
         stage('Image Push') {
