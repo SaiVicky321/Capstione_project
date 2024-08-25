@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKERHUB_CREDENTIALS = credentials('Dockerhub-sai')
+        DOCKERHUB_CREDENDIALS = credentials('Dockerhub-sai')
     }
     stages {
         stage('GIT Checkout') {
@@ -13,37 +13,23 @@ pipeline {
                 ])
             }
         }
-        stage('Listing the Directory') {
+        stage('listing the directory') {
             steps {
                 sh 'ls -lrt'
             }
         }
-        stage('Listing the Docker Images') {
+        stage('listing the docker images') {
             steps {
                 sh 'docker images'
             }
         }
-        stage('Building the Docker Image') {
+        stage('Building the docker image') {
             steps {
                 sh """docker build -t saivicky321/prod:V${env.BUILD_NUMBER} ."""
                 sh 'docker images'
             }
         }
-        stage('Prepare Docker Container') {
-            steps {
-                script {
-                    def containerIds = sh(script: "docker ps -q -f 'name=$DOCKERHUB_CREDENDIALS_USR'", returnStdout: true).trim()
-                    echo "Found container IDs: ${containerIds}"
-                    if (containerIds) {
-                        sh """
-                        docker stop ${containerIds} || true
-                        docker rm ${containerIds} || true
-                        """
-                    }
-                }
-            }
-        }
-        stage('Running the Container') {
+        stage('Runnung the container') {
             steps {
                 sh """docker run --name my-react-app -d -p 80:80 saivicky321/prod:V${env.BUILD_NUMBER}"""
                 sh 'docker ps -a'
@@ -54,7 +40,7 @@ pipeline {
                 sh """echo $DOCKERHUB_CREDENDIALS_PSW | docker login -u $DOCKERHUB_CREDENDIALS_USR --password-stdin"""
             }
         }
-        stage('Image Push') {
+        stage('Image push') {
             steps {
                 sh """docker push saivicky321/prod:V${env.BUILD_NUMBER}"""
             }
@@ -66,5 +52,3 @@ pipeline {
         }
     }
 }
-
-
