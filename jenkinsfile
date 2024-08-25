@@ -2,9 +2,7 @@ pipeline {
     agent any
     environment {
         DOCKERHUB_CREDENTIALS = credentials('Dockerhub-sai')
-    }
-    parameters {
-        string(name: 'CONTAINER_PREFIX', defaultValue: 'saivicky321', description: 'Prefix of the Docker container names')
+        CONTAINER_PREFIX = 'saivicky321'
     }
     stages {
         stage('GIT Checkout') {
@@ -35,7 +33,7 @@ pipeline {
         stage('Prepare Docker Container') {
             steps {
                 script {
-                    def containerIds = sh(script: "docker ps -q -f 'name=${params.CONTAINER_PREFIX}'", returnStdout: true).trim()
+                    def containerIds = sh(script: "docker ps -q -f 'name=$CONTAINER_PREFIX'", returnStdout: true).trim()
                     echo "Found container IDs: ${containerIds}"
                     if (containerIds) {
                         sh """
@@ -69,4 +67,3 @@ pipeline {
         }
     }
 }
-
