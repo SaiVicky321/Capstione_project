@@ -25,15 +25,15 @@ pipeline {
         }
         stage('Building the Docker Image') {
             steps {
-                sh """docker build -t ${env.DOCKERHUB_CREDENDIALS_USR}/prod:V${env.BUILD_NUMBER} ."""
+                sh """docker build -t ${env.DOCKERHUB_CREDENTIALS_USR}/prod:V${env.BUILD_NUMBER} ."""
                 sh 'docker images'
             }
         }
         stage('Prepare Docker Container') {
             steps {
                 script {
-                    echo "Environment Variable DOCKERHUB_CREDENDIALS_USR: ${env.DOCKERHUB_CREDENDIALS_USR}"
-                    def containerIds = sh(script: "docker ps -q -f 'name=${env.DOCKERHUB_CREDENDIALS_USR}'", returnStdout: true).trim()
+                    echo "Environment Variable DOCKERHUB_CREDENTIALS_USR: ${env.DOCKERHUB_CREDENTIALS_USR}"
+                    def containerIds = sh(script: "docker ps -q -f 'name=${env.DOCKERHUB_CREDENTIALS_USR}'", returnStdout: true).trim()
                     echo "Found container IDs: ${containerIds}"
                     if (containerIds) {
                         sh """
@@ -43,25 +43,25 @@ pipeline {
                 docker rm ${containerIds} || true
                 """
                     } else {
-                        echo "No containers found with the prefix ${env.DOCKERHUB_CREDENDIALS_USR}"
+                        echo "No containers found with the prefix ${env.DOCKERHUB_CREDENTIALS_USR}"
                     }
                 }
             }
         }
         stage('Running the Container') {
             steps {
-                sh """docker run --name my-react-app -d -p 80:80 ${env.DOCKERHUB_CREDENDIALS_USR}/prod:V${env.BUILD_NUMBER}"""
+                sh """docker run --name my-react-app -d -p 80:80 ${env.DOCKERHUB_CREDENTIALS_USR}/prod:V${env.BUILD_NUMBER}"""
                 sh 'docker ps -a'
             }
         }
         stage('docker login ') {
             steps {
-                sh """echo $DOCKERHUB_CREDENDIALS_PSW | docker login -u $DOCKERHUB_CREDENDIALS_USR --password-stdin"""
+                sh """echo $DOCKERHUB_CREDENTIALS_USR | docker login -u $DOCKERHUB_CREDENTIALS_USR --password-stdin"""
             }
         }
         stage('Image Push') {
             steps {
-                sh """docker push ${env.DOCKERHUB_CREDENDIALS_USR}/prod:V${env.BUILD_NUMBER}"""
+                sh """docker push ${env.DOCKERHUB_CREDENTIALS_USR}/prod:V${env.BUILD_NUMBER}"""
             }
         }
     }
