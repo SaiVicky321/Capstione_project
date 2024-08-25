@@ -1,0 +1,54 @@
+pipeline {
+    agent any
+    environment {
+        DOCKERHUB_CREDENDIALS = credentials('Dockerhub-sai')
+    }
+    stages {
+        stage('GIT Checkout') {
+            steps {
+                checkout scmGit(branches: [
+                    [name: '*/prod']
+                ], extensions: [], userRemoteConfigs: [
+                    [url: 'https://github.com/SaiVicky321/Capstione_project.git']
+                ])
+            }
+        }
+        stage('listing the directory') {
+            steps {
+                sh 'ls -lrt'
+            }
+        }
+        stage('listing the docker images') {
+            steps {
+                sh 'docker images'
+            }
+        }
+        stage('Building the docker image') {
+            steps {
+                sh """docker build -t saivicky321/prod:V${env.BUILD_NUMBER} ."""
+                sh 'docker images'
+            }
+        }
+        stage('Runnung the container') {
+            steps {
+                sh """docker run --name my-react-app -d -p 80:80 saivicky321/prod:V${env.BUILD_NUMBER}"""
+                sh 'docker ps -a'
+            }
+        }
+        stage('docker login ') {
+            steps {
+                sh """echo $DOCKERHUB_CREDENDIALS_PSW | docker login -u $DOCKERHUB_CREDENDIALS_USR --password-stdin"""
+            }
+        }
+        stage('Image push') {
+            steps {
+                sh """docker push saivicky321/prod:V${env.BUILD_NUMBER}"""
+            }
+        }
+    }
+    post {
+        always {
+            sh 'docker logout'
+        }
+    }
+}
