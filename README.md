@@ -44,3 +44,13 @@ COPY build/ /usr/share/nginx/html
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
 ```
+###docker-compose.yaml
+```yaml
+version: '3.8'
+
+services:
+  react-app:
+    image: saivicky321/react-app:latest
+    ports:
+      - "80:80"
+```
