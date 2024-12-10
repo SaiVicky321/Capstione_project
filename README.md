@@ -14,7 +14,6 @@
 - [Step 3: Push the Local Git Repo to GitHub](#step-3-push-the-local-git-repo-to-github)
 - [Step 4: Docker Hub Repositories](#step-4-docker-hub-repositories)
 - [Step 5: Jenkins CI/CD Pipeline](#step-5-jenkins-cicd-pipeline)
-
 - [Step 6: AWS EC2 Deployment](#step-6-aws-ec2-deployment)
 - [Step 7: Monitoring with AWS CloudWatch & SNS](#step-7-monitoring-with-aws-cloudwatch--sns)
 - [Conclusion](#conclusion)
@@ -80,7 +79,7 @@ Create two bash scripts to automate the Docker build and deployment process.
    git push origin dev
     ```
 
-## Step 4: Push the Local Git Repo to GitHub
+## Step 4: Docker Hub Repositories
 1. Create two repositories on Docker Hub:
     * dev:Public repository for development images.
     * prod: Private repository for production images.
